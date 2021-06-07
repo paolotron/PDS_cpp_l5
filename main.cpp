@@ -94,19 +94,17 @@ void print_map(map<string, int> &m){
 }
 
 int main(){
-    auto *map_fun = new function<vector<tuple<string, int>>(const string&)> ([](const string& is)->vector<tuple<string, int>>{
+    auto map_fun = function<vector<tuple<string, int>>(const string&)> ([](const string& is)->vector<tuple<string, int>>{
         vector<tuple<string, int>> res;
         res.emplace_back(is.substr(0, is.find(' ')), 1);
         return res;
     });
-    auto *red_fun = new function<tuple<string, int>(tuple<string&, int&, int&>)>  ([](tuple<string, int, int> in)->tuple<string, int>{
+    auto red_fun = function<tuple<string, int>(tuple<string&, int&, int&>)>  ([](tuple<string, int, int> in)->tuple<string, int>{
         return tuple<string, int>(get<0>(in), get<1>(in)+get<2>(in));
     });
     Coordinator<string, string, int, int> coord(map_fun, red_fun);
     auto res = coord.compute("../mapred", 100, 3, 3);
     print_map(res);
-    delete map_fun;
-    delete red_fun;
 }
 
 

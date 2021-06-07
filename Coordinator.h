@@ -13,12 +13,12 @@ namespace fs = std::filesystem;
 template<class MapperInputT, class KeyT,  class ResultT, class AccumulatorT>
 class Coordinator {
 private:
-    function<vector<tuple<KeyT, ResultT>>(const MapperInputT&)> *Mapper=nullptr;
-    function<tuple<KeyT, AccumulatorT>(tuple<KeyT&, ResultT&, AccumulatorT&>)> *Reducer=nullptr;
+    function<vector<tuple<KeyT, ResultT>>(const MapperInputT&)> Mapper=nullptr;
+    function<tuple<KeyT, AccumulatorT>(tuple<KeyT&, ResultT&, AccumulatorT&>)> Reducer=nullptr;
 
 public:
-    explicit Coordinator(function<vector<tuple<KeyT, ResultT>>(const MapperInputT&)> *Mapper_p,
-                         function<tuple<KeyT, AccumulatorT>(tuple<KeyT&, ResultT&, AccumulatorT&>)> *Reducer_p) {
+    explicit Coordinator(function<vector<tuple<KeyT, ResultT>>(const MapperInputT&)> Mapper_p,
+                         function<tuple<KeyT, AccumulatorT>(tuple<KeyT&, ResultT&, AccumulatorT&>)> Reducer_p) {
         this->Mapper = Mapper_p;
         this->Reducer = Reducer_p;
     }
@@ -54,17 +54,17 @@ public:
         out->set_end();
     }
 
-    static void Map_t(function<vector<tuple<KeyT, ResultT>>(const MapperInputT&)> *Mapper, shared_ptr<Jobs<MapperInputT>> in, shared_ptr<Jobs<tuple<KeyT, ResultT>>> out){
+    static void Map_t(function<vector<tuple<KeyT, ResultT>>(const MapperInputT&)> Mapper, shared_ptr<Jobs<MapperInputT>> in, shared_ptr<Jobs<tuple<KeyT, ResultT>>> out){
         optional<MapperInputT> s;
         string buf;
         while((s=in->get())){
-            for (auto & MapOut : (*Mapper)(*s))
+            for (auto & MapOut : Mapper(*s))
                 out->put(MapOut);
         }
         out->set_end();
     }
 
-    static void Reduce(function<tuple<KeyT, AccumulatorT>(tuple<KeyT&, ResultT&, AccumulatorT&>)> *Reducer,
+    static void Reduce(function<tuple<KeyT, AccumulatorT>(tuple<KeyT&, ResultT&, AccumulatorT&>)> Reducer,
                 shared_ptr<Jobs<tuple<KeyT, ResultT>>> in,
                 shared_ptr<map<KeyT, AccumulatorT>> accumulator,
                 const shared_ptr<std::shared_mutex>& acc_lock){
@@ -78,7 +78,7 @@ public:
             acc_lock->lock_shared();
             AccumulatorT firstacc = (*accumulator)[key];
             acc_lock->unlock_shared();
-            tuple<KeyT, AccumulatorT> r = (*Reducer)(tuple<KeyT&, ResultT&, AccumulatorT&>(key, mapres, firstacc));
+            tuple<KeyT, AccumulatorT> r = Reducer(tuple<KeyT&, ResultT&, AccumulatorT&>(key, mapres, firstacc));
             acc_lock->lock();
             (*accumulator)[get<0>(r)] = get<1>(r);
             acc_lock->unlock();
